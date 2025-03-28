@@ -96,3 +96,5 @@ Hackverse-DPDP/
 - Multi-language support for privacy policies.
 - Advanced in-house security scanning technology to detect more vulnerabilities instead of relying on external APIs.
 
+## Demonstration video
+https://drive.google.com/file/d/1O7A3k5pl2Ntsq0UKwJO7Tjc6SWJeOuAW/view?usp=sharing
