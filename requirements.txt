@@ -5,3 +5,8 @@ cohere
 PyPDF2
 beautifulsoup4
 google-generativeai
+validators
+whois
+together
+plyer
+
