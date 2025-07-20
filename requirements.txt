@@ -9,4 +9,6 @@ validators
 whois
 together
 plyer
+reportlab
+
 
