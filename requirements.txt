@@ -1,0 +1,7 @@
+streamlit
+plotly
+shodan
+cohere
+PyPDF2
+beautifulsoup4
+google-generativeai
