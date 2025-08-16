@@ -17,12 +17,18 @@ import google.generativeai as genai
 
 url = st.session_state.get('policy_url')
 
-# API Keys (replace with actual API keys)
-SHODAN_API_KEY = st.secrets.get('SHODAN_API_KEY', '')
-genai.configure(api_key="AIzaSyDZjor43yqVq4bWRThkg-EraIh6vmlCw6s")
+# API Keys from secrets.toml
+SHODAN_API_KEY = st.secrets["api_keys"]["SHODAN_API_KEY"]
+BREACH_DIRECTORY_API_KEY = st.secrets["api_keys"]["BREACH_DIRECTORY_API_KEY"]
+GENAI_API_KEY = st.secrets["api_keys"]["GENAI_API_KEY"]
+
+# Configure Gemini / Google AI
+genai.configure(api_key=GENAI_API_KEY)
+
+# Optional keys (if you added them later)
 HAVEIBEENPWNED_API_KEY = st.secrets.get('HAVEIBEENPWNED_API_KEY', '')
-BREACH_DIRECTORY_API_KEY='7d93764f6bmsh81095bf18419627p1fc415jsnf6df534c0add'
 GOOGLE_DLP_API_KEY = st.secrets.get('GOOGLE_DLP_API_KEY', '')
+
 
 class SecurityScanner:
     def __init__(self, url):
@@ -143,7 +149,7 @@ class SecurityScanner:
                     }
 
                 except shodan.APIError as e:
-                    st.warning(f"Shodan API error: {e}")
+                    st.warning("Using basic TCP scan.")
                 except Exception as e:
                     st.warning(f"Shodan processing error: {e}")
 
@@ -293,14 +299,16 @@ class SecurityScanner:
 
             # Calculate domain age
             domain_age = (datetime.now() - creation_date).days if creation_date else 'Unknown'
-
+            ssl_expiry = None
             # SSL Certificate info
-            context = ssl.create_default_context()
-            with socket.create_connection((self.domain, 443)) as sock:
-                with context.wrap_socket(sock, server_hostname=self.domain) as secure_sock:
-                    ssl_cert = secure_sock.getpeercert()
-                    ssl_expiry = datetime.strptime(ssl_cert['notAfter'], '%b %d %H:%M:%S %Y %Z')
-
+            try:
+                context = ssl.create_default_context()
+                with socket.create_connection((self.domain, 443),timeout=5) as sock:
+                    with context.wrap_socket(sock, server_hostname=self.domain) as secure_sock:
+                        ssl_cert = secure_sock.getpeercert()
+                        ssl_expiry = datetime.strptime(ssl_cert['notAfter'], '%b %d %H:%M:%S %Y %Z')
+            except Exception as ssl_e:
+                st.warning(f"SSL certificate retrieval error: {ssl_e}")
             self.scan_results['domain_metadata'] = {
                 'domain_age': domain_age,
                 'ssl_expiry': ssl_expiry
@@ -646,14 +654,17 @@ def run_security_scan():
                     st.error(port)
             else:
                 st.success("No critical ports exposed")
-            for port in port_results:
-                st.warning(f"Exposed Port: {port}")
+            # for port in port_results:
+            #     st.warning(f"Exposed Port: {port}")
             
             # Security Headers
             headers = scanner.check_security_headers()
             st.subheader("Security Headers")
             for header, value in headers.items():
-                st.info(f"{header}: {value}")
+                if not value:
+                    st.warning(f"{header}: Not Set")
+                else:
+                    st.info(f"{header}: {value}")
             
             # Domain Metadata
             domain_info = scanner.check_domain_metadata()
